@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { CATEGORY_OPTIONS } from '../lib/profileOptions.js'
 
-const CATEGORIES = ['general', 'obc', 'sc', 'st', 'ebc', 'sbc', 'dnt', 'ews']
+const CATEGORIES = CATEGORY_OPTIONS
 const COURSE_LEVELS = ['ug', 'pg', 'diploma']
 const GENDERS = ['female', 'male', 'other', 'prefer-not-to-say']
 const INSTITUTION_TYPES = ['govt', 'private', 'national_level']

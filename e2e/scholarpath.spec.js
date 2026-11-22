@@ -54,8 +54,8 @@ test.describe('ScholarPath browser flows', () => {
     await cardFor(page, name).getByRole('button', { name: 'View details', exact: true }).click();
 
     await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
-    // Reason prefixes (Met:/Not met:/Needs:) are assumed from the task spec; eligibility.js was not read.
-    await expect(page.getByText(/(Met|Not met|Needs):/).first()).toBeVisible();
+    await expect(page.getByText('Eligibility not yet verified', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('No verified eligibility criteria published yet.', { exact: true }).first()).toBeVisible();
     await expect(page.getByText('Missing information', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Back to results', exact: true }).click();

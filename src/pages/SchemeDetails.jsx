@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { loadSchemes } from '../lib/dataLoader.js'
 import { evaluateScheme } from '../lib/eligibility.js'
-import { getVerificationInfo } from '../lib/verification.js'
+import { getSectionStatus, getVerificationInfo } from '../lib/verification.js'
 import { readChecklist, setChecklistItem, getChecklistItem } from '../lib/checklist.js'
 import helplines from '../data/helplines.json'
 
 const PROFILE_KEY = 'scholarpath.profile'
+const NOT_YET = 'Not yet available'
 
 export const APPROVAL_NOTE =
   'Likely eligible does not mean approved. Final decision rests with the concerned department.'
@@ -13,6 +14,7 @@ export const APPROVAL_NOTE =
 export const LABEL_CLASS = {
   likely_eligible: 'bg-green-100 text-green-900',
   possibly_eligible: 'bg-amber-100 text-amber-900',
+  incomplete_unverified: 'bg-gray-200 text-gray-800',
   likely_not_eligible: 'bg-gray-200 text-gray-800',
 }
 
@@ -49,34 +51,68 @@ export function readStoredProfile() {
   }
 }
 
-// Normalise a document/step entry (string or object) into a record with a stable id.
-function normaliseItems(list, kind) {
+const SECTION_TEXT = {
+  empty: 'No verified information published yet.',
+  verified: 'Verified for 2026-27.',
+  partial: 'Some items verified for 2026-27.',
+  historical_only: 'Historical information only.',
+  unverified: 'Not currently verified.',
+}
+
+export function sectionStatusText(status) {
+  return SECTION_TEXT[status] ?? SECTION_TEXT.unverified
+}
+
+export function eligibilityStatusText(status) {
+  if (status === 'empty') return 'No verified eligibility criteria published yet.'
+  return sectionStatusText(status)
+}
+
+function present(value) {
+  return value !== null && value !== undefined
+}
+
+function statusOf(items) {
+  return items.length === 0 ? 'empty' : getSectionStatus(items)
+}
+
+// Eligibility section status. Applicable rules are those not marked informational.
+export function eligibilitySectionStatus(scheme, result) {
+  const sourceRules = Array.isArray(scheme.eligibility) ? scheme.eligibility : []
+  const applicable = sourceRules.filter((rule) => rule.informational !== true)
+  if (applicable.length === 0) return 'empty'
+  const status = getSectionStatus(applicable)
+  if (status === 'verified' && scheme.eligibility_complete !== true) return 'partial'
+  return status
+}
+
+// Normalise a document/step/benefit entry into a record. Entries without a non-empty string id are dropped.
+function normaliseItems(list) {
   if (!Array.isArray(list)) return []
-  const prefix = kind === 'documents' ? 'doc' : 'step'
-  return list.map((entry, index) => {
-    const fallbackId = `${prefix}-${index}`
-    if (typeof entry === 'string') {
-      return {
-        id: fallbackId,
-        text: entry,
-        verification_status: 'unverified',
-        source_url: null,
-        source_page: null,
-        source_date: null,
-        academic_year: null,
-      }
-    }
-    const obj = entry !== null && typeof entry === 'object' ? entry : {}
-    return {
-      id: obj.id !== undefined && obj.id !== null && obj.id !== '' ? String(obj.id) : fallbackId,
-      text: typeof obj.text === 'string' ? obj.text : '',
-      verification_status: obj.verification_status ?? 'unverified',
-      source_url: obj.source_url ?? null,
-      source_page: obj.source_page ?? null,
-      source_date: obj.source_date ?? null,
-      academic_year: obj.academic_year ?? null,
-    }
+  return list.flatMap((entry) => {
+    if (entry === null || typeof entry !== 'object') return []
+    if (typeof entry.id !== 'string' || entry.id === '') return []
+    return [
+      {
+        id: entry.id,
+        text: typeof entry.text === 'string' ? entry.text : '',
+        verification_status: entry.verification_status ?? 'unverified',
+        source_url: entry.source_url ?? null,
+        source_page: entry.source_page ?? null,
+        source_date: entry.source_date ?? null,
+        academic_year: entry.academic_year ?? null,
+      },
+    ]
   })
+}
+
+function StatusLine({ title, text }) {
+  return (
+    <>
+      <p className="text-xs font-medium text-gray-600 mt-2">{title}</p>
+      <p className="text-sm">{text}</p>
+    </>
+  )
 }
 
 function SourceLine({ record }) {
@@ -108,13 +144,9 @@ function SourceLine({ record }) {
 // Verification label, warning line and source provenance for one record.
 function RecordProvenance({ record }) {
   const info = getVerificationInfo(record.verification_status, record.academic_year)
-  let label = info.label
-  if (info.isHistorical) {
-    label = record.academic_year ? `Historical – ${record.academic_year}` : 'Historical'
-  }
   return (
     <>
-      <span className={`block text-xs mt-1 ${info.isHistorical ? 'font-semibold' : 'opacity-80'}`}>{label}</span>
+      <span className={`block text-xs mt-1 ${info.isHistorical ? 'font-semibold' : 'opacity-80'}`}>{info.label}</span>
       {info.isWarning && (
         <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded mt-1 ${info.className}`}>
           Not currently verified
@@ -146,15 +178,24 @@ export default function SchemeDetails({ schemeId, onBack }) {
   const helpline = scheme.helpline_id
     ? helplines.find((h) => h.id === scheme.helpline_id)
     : undefined
-  const schemeInfo = getVerificationInfo(scheme.verification_status, scheme.academic_year)
+  const helplineName = helpline ? helpline.name || NOT_YET : null
+
+  const overviewStatus = scheme.identity_provenance
+    ? getSectionStatus([scheme.identity_provenance])
+    : 'unverified'
+  const eligibilityStatus = eligibilitySectionStatus(scheme, result)
+  const documentItems = normaliseItems(scheme.required_documents)
+  const stepItems = normaliseItems(scheme.application_steps)
+  const benefitItems = normaliseItems(scheme.benefits)
+  const benefitsStatus = statusOf(benefitItems)
+  const deadlineKnown = present(scheme.deadline) && present(scheme.deadline_source)
 
   function toggleItem(kind, itemId, checked) {
     setChecklistItem(scheme.id, kind, itemId, checked)
     setChecklist(readChecklist())
   }
 
-  function renderChecklist(kind, rawList, emptyText) {
-    const items = normaliseItems(rawList, kind)
+  function renderChecklist(kind, items, emptyText) {
     if (items.length === 0) return <p className="text-sm">{emptyText}</p>
     const current = items.filter((item) => item.verification_status !== 'historical')
     const historical = items.filter((item) => item.verification_status === 'historical')
@@ -187,28 +228,50 @@ export default function SchemeDetails({ schemeId, onBack }) {
 
   return (
     <section className="p-4 sm:p-6 max-w-2xl mx-auto">
-      <span className={`inline-block mb-2 text-xs font-medium px-2 py-0.5 rounded ${schemeInfo.className}`}>
-        {schemeInfo.label}
-      </span>
       <h1 className="text-2xl font-bold">{scheme.name}</h1>
-      <p className="text-sm text-gray-600 mb-2">{scheme.department}</p>
+      <p className="text-sm text-gray-600 mb-2">{scheme.department || NOT_YET}</p>
       <p className={`inline-block text-xs font-medium px-2 py-1 rounded ${LABEL_CLASS[result.result]}`}>
         {result.label}
       </p>
+      <StatusLine title="Overview" text={sectionStatusText(overviewStatus)} />
 
       {scheme.description && <p className="text-sm mt-4">{scheme.description}</p>}
 
       <h2 className="font-semibold mt-6 mb-2">Why this result</h2>
+      <StatusLine title="Eligibility" text={eligibilityStatusText(eligibilityStatus)} />
+      {result.caveat !== null && result.caveat !== undefined && (
+        <p className="text-sm mt-2">{result.caveat}</p>
+      )}
       {result.rules.length > 0 ? (
-        <ul className="space-y-2">
-          {result.rules.map((rule) => (
-            <li key={rule.rule_id} className={`text-sm border rounded px-3 py-2 ${RULE_CLASS[rule.status]}`}>
-              <span aria-hidden="true">{RULE_SYMBOL[rule.status]}</span> {rule.reason}
-              {rule.note && <span className="block text-xs mt-1 opacity-80">{rule.note}</span>}
-              <RecordProvenance record={rule} />
-
-            </li>
-          ))}
+        <ul className="space-y-2 mt-2">
+          {result.rules.map((rule) => {
+            const informational = rule.counted === false
+            return (
+              <li key={rule.rule_id} className={`text-sm border rounded px-3 py-2 ${RULE_CLASS[rule.status]}`}>
+                <span aria-hidden="true">{RULE_SYMBOL[rule.status]}</span> {rule.reason}
+                {rule.note && <span className="block text-xs mt-1 opacity-80">{rule.note}</span>}
+                {informational && (
+                  <>
+                    <span className="block text-xs mt-1 font-medium">Informational only</span>
+                    <span className="block text-xs">Not used in your eligibility result</span>
+                  </>
+                )}
+                {!informational && rule.current === false && (
+                  <>
+                    <span className="block text-xs mt-1 font-medium">Not currently verified</span>
+                    <span className="block text-xs">Unresolved; not used in a likely-eligible result</span>
+                  </>
+                )}
+                {!informational &&
+                  rule.current === true &&
+                  rule.status === 'fail' &&
+                  result.non_mandatory_failures.includes(rule.rule_id) && (
+                    <span className="block text-xs mt-1 font-medium">✗ Non-mandatory criterion not met</span>
+                  )}
+                <RecordProvenance record={rule} />
+              </li>
+            )
+          })}
         </ul>
       ) : (
         <p className="text-sm">{result.reasons.join(' ')}</p>
@@ -222,50 +285,55 @@ export default function SchemeDetails({ schemeId, onBack }) {
       )}
 
       <h2 className="font-semibold mt-6 mb-2">Required Documents</h2>
+      <StatusLine title="Status" text={sectionStatusText(statusOf(documentItems))} />
       {renderChecklist(
         'documents',
-        scheme.required_documents,
+        documentItems,
         'No source-backed documents have been published for this scheme yet.',
       )}
 
       <h2 className="font-semibold mt-6 mb-2">Application Steps</h2>
+      <StatusLine title="Status" text={sectionStatusText(statusOf(stepItems))} />
       {renderChecklist(
         'steps',
-        scheme.application_steps,
+        stepItems,
         'No source-backed application steps have been published for this scheme yet.',
       )}
 
+      <h2 className="font-semibold mt-6 mb-2">Benefits</h2>
+      <StatusLine title="Status" text={sectionStatusText(benefitsStatus)} />
+      {benefitItems.length > 0 && (
+        <ul className="space-y-2 mt-2">
+          {benefitItems.map((item) => (
+            <li key={item.id} className="text-sm border rounded px-3 py-2">
+              <span>{item.text}</span>
+              <RecordProvenance record={item} />
+            </li>
+          ))}
+        </ul>
+      )}
 
       <h2 className="font-semibold mt-6 mb-2">Deadline</h2>
-      {scheme.deadline ? (
-        <p className="text-sm">
-          Deadline: {scheme.deadline}
-          {scheme.deadline_source ? ` (source: ${scheme.deadline_source})` : ''}
-        </p>
+      {deadlineKnown ? (
+        <p className="text-sm">{`Deadline: ${scheme.deadline} (source: ${scheme.deadline_source})`}</p>
       ) : (
         <p className="text-sm">Check the official notice.</p>
       )}
 
       <h2 className="font-semibold mt-6 mb-2">Official source and helpdesk</h2>
-      {scheme.official_url && (
+      {scheme.official_url ? (
         <p className="text-sm">
           <a href={scheme.official_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
             Official source
           </a>
         </p>
+      ) : (
+        <p className="text-sm">Official source: {NOT_YET}</p>
       )}
       <p className="text-sm">
-        Helpdesk: {helpline ? `${helpline.name || scheme.department}. Check the official source for contact details.` : 'Check the official source'}
+        Helpdesk: {helpline ? `${helplineName}. Check the official source for contact details.` : 'Check the official source'}
       </p>
-
-      <h2 className="font-semibold mt-6 mb-2">Verification</h2>
-      <p className="text-sm">Status: {schemeInfo.label}</p>
-      {schemeInfo.isWarning && (
-        <p className={`inline-block text-xs font-medium px-2 py-0.5 rounded mt-1 ${schemeInfo.className}`}>
-          Not currently verified
-        </p>
-      )}
-      {scheme.last_verified && <p className="text-sm">Last verified: {scheme.last_verified}</p>}
+      <p className="text-sm">Last verified: {scheme.last_verified || NOT_YET}</p>
 
       <p className="text-sm text-gray-600 mt-6">{APPROVAL_NOTE}</p>
 

@@ -1,19 +1,27 @@
 import { useState } from 'react'
 import { loadSchemes } from '../lib/dataLoader.js'
 import { evaluateScheme } from '../lib/eligibility.js'
-import { getVerificationInfo } from '../lib/verification.js'
+
 import {
   APPROVAL_NOTE,
   LABEL_CLASS,
   RULE_CLASS,
   RULE_SYMBOL,
+  eligibilitySectionStatus,
+  eligibilityStatusText,
   friendlyFieldName,
   readStoredProfile,
 } from './SchemeDetails.jsx'
 
 const SAVED_KEY = 'scholarpath.saved'
 const APPLIED_KEY = 'scholarpath.applied'
-const RESULT_ORDER = ['likely_eligible', 'possibly_eligible', 'likely_not_eligible']
+const RESULT_RANK = {
+  likely_eligible: 0,
+  possibly_eligible: 1,
+  incomplete_unverified: 2,
+  likely_not_eligible: 3,
+}
+const UNKNOWN_RANK = 4
 
 const TABS = [
   { id: 'recommended', label: 'Recommended' },
@@ -25,6 +33,14 @@ const EMPTY_TEXT = {
   recommended: 'No scholarships to show.',
   saved: 'No saved scholarships yet. Use Save on a card.',
   applied: 'No scholarships marked as applied yet.',
+}
+
+function rankOf(result) {
+  return Object.prototype.hasOwnProperty.call(RESULT_RANK, result) ? RESULT_RANK[result] : UNKNOWN_RANK
+}
+
+function present(value) {
+  return value !== null && value !== undefined
 }
 
 function readList(key) {
@@ -63,7 +79,11 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
 
   const items = loadSchemes()
     .map((scheme) => ({ scheme, result: evaluateScheme(scheme, profile) }))
-    .sort((a, b) => RESULT_ORDER.indexOf(a.result.result) - RESULT_ORDER.indexOf(b.result.result))
+    .sort(
+      (a, b) =>
+        rankOf(a.result.result) - rankOf(b.result.result) ||
+        String(a.scheme.name ?? '').localeCompare(String(b.scheme.name ?? '')),
+    )
 
   const visible = items.filter(({ scheme }) => {
     if (tab === 'saved') return saved.includes(scheme.id)
@@ -112,21 +132,23 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
           {visible.map(({ scheme, result: r }) => {
             const isSaved = saved.includes(scheme.id)
             const isApplied = applied.includes(scheme.id)
-            const info = getVerificationInfo(scheme.verification_status, scheme.academic_year)
+            const eligibilityStatus = eligibilitySectionStatus(scheme, r)
+            const chipRules = r.rules
+              .filter((rule) => rule.informational !== true && rule.current === true)
+              .slice(0, 3)
+            const deadlineKnown = present(scheme.deadline) && present(scheme.deadline_source)
             return (
               <li key={scheme.id} className="border rounded p-4 bg-white">
-                <span className={`inline-block mb-2 text-xs font-medium px-2 py-0.5 rounded ${info.className}`}>
-                  {info.label}
-                </span>
                 <h2 className="font-semibold">{scheme.name}</h2>
-                <p className="text-sm text-gray-600">{scheme.department}</p>
+                <p className="text-sm text-gray-600">{present(scheme.department) ? scheme.department : 'Not yet available'}</p>
                 <p className={`inline-block mt-2 text-xs font-medium px-2 py-1 rounded ${LABEL_CLASS[r.result]}`}>
                   {r.label}
                 </p>
+                <p className="text-xs text-gray-700 mt-2">{eligibilityStatusText(eligibilityStatus)}</p>
 
-                {r.rules.length > 0 && (
+                {chipRules.length > 0 && (
                   <ul className="flex flex-wrap gap-2 mt-3">
-                    {r.rules.slice(0, 3).map((rule) => (
+                    {chipRules.map((rule) => (
                       <li
                         key={rule.rule_id}
                         className={`text-xs border rounded px-2 py-1 ${RULE_CLASS[rule.status]}`}
@@ -144,11 +166,9 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
                 )}
 
                 <p className="text-xs text-gray-600 mt-2">
-                  {scheme.deadline ? `Deadline: ${scheme.deadline}` : 'Check the official notice.'}
+                  {deadlineKnown ? `Deadline: ${scheme.deadline}` : 'Check the official notice.'}
                 </p>
-                {scheme.last_verified && (
-                  <p className="text-xs text-gray-600">Last verified: {scheme.last_verified}</p>
-                )}
+                <p className="text-xs text-gray-600">Last verified: {scheme.last_verified || 'Not yet available'}</p>
 
                 <div className="flex flex-wrap gap-2 mt-3">
                   <button
