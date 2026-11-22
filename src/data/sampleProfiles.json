@@ -1,0 +1,26 @@
+{
+  "Rohit": {
+    "name": "Rohit",
+    "note": "Synthetic sample profile. First-time applicant.",
+    "state": "Rajasthan",
+    "category": "general",
+    "annual_family_income": 150000,
+    "course_level": "ug",
+    "gender": "male",
+    "is_pwd": false,
+    "institution_type": "govt",
+    "applied_before": false
+  },
+  "Aman": {
+    "name": "Aman",
+    "note": "Synthetic sample profile. Already applied.",
+    "state": "Rajasthan",
+    "category": "obc",
+    "annual_family_income": 400000,
+    "course_level": "ug",
+    "gender": "male",
+    "is_pwd": false,
+    "institution_type": "private",
+    "applied_before": true
+  }
+}
