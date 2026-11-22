@@ -52,8 +52,8 @@ export function evaluateRule(rule, profile) {
     default:
       return {
         rule_id,
-        status: "fail",
-        reason: "Unsupported rule: " + label,
+        status: "unknown",
+        reason: "Cannot check automatically: " + label,
         missing: null,
         note,
       };
