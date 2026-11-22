@@ -1,9 +1,10 @@
+
 [
   {
-    "id": "sample-scheme",
-    "name": "Sample Scholarship (Sample, unverified)",
-    "department": "Sample Department",
-    "description": "Placeholder entry for demonstration only. Not a real scheme. Replace with verified data before use.",
+    "id": "sje-sc-post-matric",
+    "name": "Rajasthan SJE Post-Matric Scholarship for SC Students (Unverified)",
+    "department": "Social Justice and Empowerment Department, Government of Rajasthan",
+    "description": "Proposed record for the Rajasthan Post-Matric Scholarship for Scheduled Caste (SC) students. Scheme identity, current applicability, and eligibility details have not yet been verified against an authoritative government source. A ₹2.5 lakh annual family income ceiling has been mentioned as a research reference, but remains unverified and is not an eligibility condition in this record.",
     "identity_provenance": {
       "source_url": null,
       "source_page": null,
@@ -14,7 +15,7 @@
       "issuing_authority": null
     },
     "administering_authority": null,
-    "scheme_jurisdiction": null,
+    "scheme_jurisdiction": "Rajasthan",
     "eligibility_complete": false,
     "eligibility_review": null,
     "eligibility": [],
@@ -28,10 +29,10 @@
     "last_verified": null
   },
   {
-    "id": "sample-scheme-2",
-    "name": "Sample Scheme Two (Sample, unverified)",
-    "department": "Sample Department",
-    "description": "Made-up test record for the rules engine. Not a real scheme. Replace with verified data before use.",
+    "id": "sje-st-post-matric",
+    "name": "Rajasthan SJE Post-Matric Scholarship for ST Students (Unverified)",
+    "department": "Social Justice and Empowerment Department, Government of Rajasthan",
+    "description": "Proposed record for the Rajasthan Post-Matric Scholarship for Scheduled Tribe (ST) students. Scheme identity, current applicability, and eligibility details have not yet been verified against an authoritative government source. A ₹2.5 lakh annual family income ceiling has been mentioned as a research reference, but remains unverified and is not an eligibility condition in this record.",
     "identity_provenance": {
       "source_url": null,
       "source_page": null,
@@ -42,7 +43,7 @@
       "issuing_authority": null
     },
     "administering_authority": null,
-    "scheme_jurisdiction": null,
+    "scheme_jurisdiction": "Rajasthan",
     "eligibility_complete": false,
     "eligibility_review": null,
     "eligibility": [],
@@ -56,10 +57,10 @@
     "last_verified": null
   },
   {
-    "id": "sample-scheme-3",
-    "name": "Sample Scheme Three (Sample, unverified)",
-    "department": "Sample Department",
-    "description": "Made-up test record for the rules engine. Not a real scheme. Replace with verified data before use.",
+    "id": "sje-obc-post-matric",
+    "name": "Rajasthan SJE Post-Matric Scholarship for OBC Students (Unverified)",
+    "department": "Social Justice and Empowerment Department, Government of Rajasthan",
+    "description": "Proposed record for the Rajasthan Post-Matric Scholarship for Other Backward Classes (OBC) students. Scheme identity, current applicability, and eligibility details have not yet been verified against an authoritative government source. A ₹2.5 lakh annual family income ceiling has been mentioned as a research reference, but remains unverified and is not an eligibility condition in this record.",
     "identity_provenance": {
       "source_url": null,
       "source_page": null,
@@ -70,7 +71,7 @@
       "issuing_authority": null
     },
     "administering_authority": null,
-    "scheme_jurisdiction": null,
+    "scheme_jurisdiction": "Rajasthan",
     "eligibility_complete": false,
     "eligibility_review": null,
     "eligibility": [],
