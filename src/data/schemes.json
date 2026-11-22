@@ -1,0 +1,17 @@
+[
+  {
+    "id": "sample-scheme",
+    "name": "Sample Scholarship (Sample, unverified)",
+    "department": "Sample Department",
+    "description": "Placeholder entry for demonstration only. Not a real scheme. Replace with verified data before use.",
+    "eligibility": { "income_band_max": "placeholder", "social_categories": ["placeholder"], "course_levels": ["placeholder"] },
+    "required_documents": ["Placeholder document"],
+    "application_steps": ["Placeholder step"],
+    "official_url": "https://example.com/sample-scheme",
+    "helpline_id": "sample-helpline",
+    "deadline": null,
+    "deadline_source": null,
+    "last_verified": null,
+    "verification_status": "unverified-sample"
+  }
+]
