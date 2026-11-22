@@ -51,7 +51,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#faf7f2]">
       <main className="flex-1">
         {content}
       </main>

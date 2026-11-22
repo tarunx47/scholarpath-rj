@@ -104,11 +104,18 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
   }
 
   return (
-    <section className="p-4 sm:p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">Your scholarships</h1>
-      <p className="text-sm text-gray-600 mb-4">{APPROVAL_NOTE}</p>
+    <section className="sp-container bg-[#faf7f2] text-[#18212b] p-4 sm:p-6 md:p-8 mx-auto">
+      <header className="mb-8 max-w-3xl">
+        <h1 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-[#18212b] leading-tight mb-3">
+          Your scholarships
+        </h1>
+        <p className="text-base text-[#5a6573] leading-relaxed max-w-prose">{APPROVAL_NOTE}</p>
+      </header>
 
-      <div role="tablist" className="flex gap-2 mb-4">
+      <div
+        role="tablist"
+        className="flex flex-wrap gap-1 mb-8 p-1.5 rounded-2xl bg-[#f1ebdf] w-fit max-w-full"
+      >
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -116,8 +123,10 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
             role="tab"
             aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
-            className={`px-3 py-1.5 rounded border text-sm ${
-              tab === t.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'
+            className={`min-h-11 px-5 py-2 rounded-xl border text-sm font-semibold transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f6353] ${
+              tab === t.id
+                ? 'bg-white text-[#0c2a24] border-[#d5e9e2] shadow-md'
+                : 'bg-transparent text-[#5a6573] border-transparent hover:text-[#18212b] hover:bg-white/60'
             }`}
           >
             {t.label}
@@ -126,9 +135,9 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
       </div>
 
       {visible.length === 0 ? (
-        <p className="text-sm text-gray-600">{EMPTY_TEXT[tab]}</p>
+        <p className="text-base text-[#5a6573]">{EMPTY_TEXT[tab]}</p>
       ) : (
-        <ul className="space-y-4">
+        <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {visible.map(({ scheme, result: r }) => {
             const isSaved = saved.includes(scheme.id)
             const isApplied = applied.includes(scheme.id)
@@ -138,20 +147,23 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
               .slice(0, 3)
             const deadlineKnown = present(scheme.deadline) && present(scheme.deadline_source)
             return (
-              <li key={scheme.id} className="border rounded p-4 bg-white">
-                <h2 className="font-semibold">{scheme.name}</h2>
+              <li
+                key={scheme.id}
+                className="sp-card flex flex-col rounded-2xl border border-[#d5e9e2] bg-white p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <h2 className="font-serif text-xl font-semibold text-[#18212b] leading-snug">{scheme.name}</h2>
                 <p className="text-sm text-gray-600">{present(scheme.department) ? scheme.department : 'Not yet available'}</p>
-                <p className={`inline-block mt-2 text-xs font-medium px-2 py-1 rounded ${LABEL_CLASS[r.result]}`}>
+                <p className={`sp-chip inline-block self-start mt-4 text-xs font-semibold px-3 py-1 rounded-full border ${LABEL_CLASS[r.result]}`}>
                   {r.label}
                 </p>
-                <p className="text-xs text-gray-700 mt-2">{eligibilityStatusText(eligibilityStatus)}</p>
+                <p className="text-sm text-[#18212b] mt-2">{eligibilityStatusText(eligibilityStatus)}</p>
 
                 {chipRules.length > 0 && (
                   <ul className="flex flex-wrap gap-2 mt-3">
                     {chipRules.map((rule) => (
                       <li
                         key={rule.rule_id}
-                        className={`text-xs border rounded px-2 py-1 ${RULE_CLASS[rule.status]}`}
+                        className={`sp-chip text-xs border rounded-full px-2.5 py-1 ${RULE_CLASS[rule.status]}`}
                       >
                         <span aria-hidden="true">{RULE_SYMBOL[rule.status]}</span> {rule.reason}
                       </li>
@@ -160,21 +172,23 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
                 )}
 
                 {r.missing_fields.length > 0 && (
-                  <p className="text-sm mt-2">
+                  <p className="text-sm text-[#4a2f00] bg-[#fdf6e3] border border-[#f0d78f] rounded-lg px-3 py-2 mt-3">
                     Missing: {r.missing_fields.map(friendlyFieldName).join(', ')}
                   </p>
                 )}
 
-                <p className="text-xs text-gray-600 mt-2">
-                  {deadlineKnown ? `Deadline: ${scheme.deadline}` : 'Check the official notice.'}
-                </p>
-                <p className="text-xs text-gray-600">Last verified: {scheme.last_verified || 'Not yet available'}</p>
+                <div className="mt-4 pt-4 border-t border-[#f1ebdf] space-y-1">
+                  <p className="text-xs text-[#5a6573]">
+                    {deadlineKnown ? `Deadline: ${scheme.deadline}` : 'Check the official notice.'}
+                  </p>
+                  <p className="text-xs text-[#5a6573]">Last verified: {scheme.last_verified || 'Not yet available'}</p>
+                </div>
 
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-auto pt-5">
                   <button
                     type="button"
                     onClick={() => onOpenScheme(scheme.id)}
-                    className="px-3 py-1.5 rounded bg-blue-600 text-white text-sm"
+                    className="sp-btn-primary min-h-11 px-4 py-2 rounded-xl bg-[#1f6353] text-white text-sm font-semibold hover:bg-[#184f43] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f6353]"
                   >
                     View details
                   </button>
@@ -182,7 +196,7 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
                     type="button"
                     aria-pressed={isSaved}
                     onClick={() => toggleSaved(scheme.id)}
-                    className="px-3 py-1.5 rounded border text-sm"
+                    className="sp-btn-secondary min-h-11 px-4 py-2 rounded-xl border border-[#d5e9e2] bg-white text-[#18212b] text-sm font-semibold hover:bg-[#f1ebdf] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f6353]"
                   >
                     {isSaved ? 'Saved' : 'Save'}
                   </button>
@@ -190,7 +204,7 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
                     type="button"
                     aria-pressed={isApplied}
                     onClick={() => toggleApplied(scheme.id)}
-                    className="px-3 py-1.5 rounded border text-sm"
+                    className="sp-btn-secondary min-h-11 px-4 py-2 rounded-xl border border-[#d5e9e2] bg-white text-[#18212b] text-sm font-semibold hover:bg-[#f1ebdf] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f6353]"
                   >
                     {isApplied ? 'Marked as applied' : 'Mark as applied'}
                   </button>
@@ -201,16 +215,23 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
         </ul>
       )}
 
-      <p className="text-sm text-gray-600 mt-6">{APPROVAL_NOTE}</p>
-
-      <div className="flex flex-col sm:flex-row gap-3 pt-4">
-        <button type="button" onClick={onEditProfile} className="px-4 py-2 rounded border">
+      <div className="flex flex-col sm:flex-row gap-3 mt-10 pt-6 border-t border-[#e6dfd1]">
+        <button
+          type="button"
+          onClick={onEditProfile}
+          className="sp-btn-secondary min-h-11 px-5 py-2 rounded-xl border border-[#d5e9e2] bg-white text-[#18212b] font-semibold hover:bg-[#f1ebdf] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f6353]"
+        >
           Edit profile
         </button>
-        <button type="button" onClick={onBack} className="px-4 py-2 rounded border">
+        <button
+          type="button"
+          onClick={onBack}
+          className="sp-btn-secondary min-h-11 px-5 py-2 rounded-xl border border-[#d5e9e2] bg-white text-[#18212b] font-semibold hover:bg-[#f1ebdf] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f6353]"
+        >
           Back
         </button>
       </div>
     </section>
   )
 }
+

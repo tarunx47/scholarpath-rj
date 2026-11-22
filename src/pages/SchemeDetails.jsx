@@ -109,7 +109,7 @@ function normaliseItems(list) {
 function StatusLine({ title, text }) {
   return (
     <>
-      <p className="text-xs font-medium text-gray-600 mt-2">{title}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#5a6573] mt-3">{title}</p>
       <p className="text-sm">{text}</p>
     </>
   )
@@ -122,7 +122,7 @@ function SourceLine({ record }) {
   if (page) parts.push(page)
   if (url) {
     parts.push(
-      <a key="url" href={url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
+      <a key="url" href={url} target="_blank" rel="noopener noreferrer" className="text-[#1f6353] underline">
         Source link
       </a>,
     )
@@ -165,9 +165,9 @@ export default function SchemeDetails({ schemeId, onBack }) {
 
   if (!scheme) {
     return (
-      <section className="p-4 sm:p-6 max-w-2xl mx-auto">
+      <section className="sp-container p-4 sm:p-6 max-w-3xl mx-auto">
         <p className="mb-4">This scholarship could not be found.</p>
-        <button type="button" onClick={onBack} className="px-4 py-2 rounded border">
+        <button type="button" onClick={onBack} className="sp-btn-secondary min-h-11 px-4 py-2 rounded-md border border-slate-300">
           Back to results
         </button>
       </section>
@@ -199,12 +199,15 @@ export default function SchemeDetails({ schemeId, onBack }) {
     if (items.length === 0) return <p className="text-sm">{emptyText}</p>
     const current = items.filter((item) => item.verification_status !== 'historical')
     const historical = items.filter((item) => item.verification_status === 'historical')
+    // Steps render as a numbered ordered list; documents stay unordered.
+    const ListTag = kind === 'steps' ? 'ol' : 'ul'
+    const listClass = `${kind === 'steps' ? 'list-decimal pl-6 marker:font-semibold marker:text-[#1f6353]' : ''} space-y-3`
     const renderItem = (item) => (
-      <li key={item.id} className="text-sm border rounded px-3 py-2">
-        <label className="flex items-start gap-2">
+      <li key={item.id} className="text-sm border border-[#d5e9e2] rounded-xl px-4 py-3.5 bg-white">
+        <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
-            className="mt-1"
+            className="mt-0.5 h-5 w-5 shrink-0 accent-[#1f6353] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1f6353]"
             checked={getChecklistItem(scheme.id, kind, item.id)}
             onChange={(e) => toggleItem(kind, item.id, e.target.checked)}
           />
@@ -215,11 +218,11 @@ export default function SchemeDetails({ schemeId, onBack }) {
     )
     return (
       <>
-        {current.length > 0 && <ul className="space-y-2">{current.map(renderItem)}</ul>}
+        {current.length > 0 && <ListTag className={listClass}>{current.map(renderItem)}</ListTag>}
         {historical.length > 0 && (
           <>
-            <h3 className="text-sm font-medium mt-3 mb-1">Historical (not current)</h3>
-            <ul className="space-y-2">{historical.map(renderItem)}</ul>
+            <h3 className="text-sm font-medium text-[#5a6573] mt-6 mb-2">Historical (not current)</h3>
+            <ListTag className={listClass}>{historical.map(renderItem)}</ListTag>
           </>
         )}
       </>
@@ -227,121 +230,187 @@ export default function SchemeDetails({ schemeId, onBack }) {
   }
 
   return (
-    <section className="p-4 sm:p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">{scheme.name}</h1>
-      <p className="text-sm text-gray-600 mb-2">{scheme.department || NOT_YET}</p>
-      <p className={`inline-block text-xs font-medium px-2 py-1 rounded ${LABEL_CLASS[result.result]}`}>
-        {result.label}
-      </p>
-      <StatusLine title="Overview" text={sectionStatusText(overviewStatus)} />
-
-      {scheme.description && <p className="text-sm mt-4">{scheme.description}</p>}
-
-      <h2 className="font-semibold mt-6 mb-2">Why this result</h2>
-      <StatusLine title="Eligibility" text={eligibilityStatusText(eligibilityStatus)} />
-      {result.caveat !== null && result.caveat !== undefined && (
-        <p className="text-sm mt-2">{result.caveat}</p>
-      )}
-      {result.rules.length > 0 ? (
-        <ul className="space-y-2 mt-2">
-          {result.rules.map((rule) => {
-            const informational = rule.counted === false
-            return (
-              <li key={rule.rule_id} className={`text-sm border rounded px-3 py-2 ${RULE_CLASS[rule.status]}`}>
-                <span aria-hidden="true">{RULE_SYMBOL[rule.status]}</span> {rule.reason}
-                {rule.note && <span className="block text-xs mt-1 opacity-80">{rule.note}</span>}
-                {informational && (
-                  <>
-                    <span className="block text-xs mt-1 font-medium">Informational only</span>
-                    <span className="block text-xs">Not used in your eligibility result</span>
-                  </>
-                )}
-                {!informational && rule.current === false && (
-                  <>
-                    <span className="block text-xs mt-1 font-medium">Not currently verified</span>
-                    <span className="block text-xs">Unresolved; not used in a likely-eligible result</span>
-                  </>
-                )}
-                {!informational &&
-                  rule.current === true &&
-                  rule.status === 'fail' &&
-                  result.non_mandatory_failures.includes(rule.rule_id) && (
-                    <span className="block text-xs mt-1 font-medium">✗ Non-mandatory criterion not met</span>
-                  )}
-                <RecordProvenance record={rule} />
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <p className="text-sm">{result.reasons.join(' ')}</p>
-      )}
-
-      <h2 className="font-semibold mt-6 mb-2">Missing information</h2>
-      {result.missing_fields.length > 0 ? (
-        <p className="text-sm">{result.missing_fields.map(friendlyFieldName).join(', ')}</p>
-      ) : (
-        <p className="text-sm">No missing information.</p>
-      )}
-
-      <h2 className="font-semibold mt-6 mb-2">Required Documents</h2>
-      <StatusLine title="Status" text={sectionStatusText(statusOf(documentItems))} />
-      {renderChecklist(
-        'documents',
-        documentItems,
-        'No source-backed documents have been published for this scheme yet.',
-      )}
-
-      <h2 className="font-semibold mt-6 mb-2">Application Steps</h2>
-      <StatusLine title="Status" text={sectionStatusText(statusOf(stepItems))} />
-      {renderChecklist(
-        'steps',
-        stepItems,
-        'No source-backed application steps have been published for this scheme yet.',
-      )}
-
-      <h2 className="font-semibold mt-6 mb-2">Benefits</h2>
-      <StatusLine title="Status" text={sectionStatusText(benefitsStatus)} />
-      {benefitItems.length > 0 && (
-        <ul className="space-y-2 mt-2">
-          {benefitItems.map((item) => (
-            <li key={item.id} className="text-sm border rounded px-3 py-2">
-              <span>{item.text}</span>
-              <RecordProvenance record={item} />
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h2 className="font-semibold mt-6 mb-2">Deadline</h2>
-      {deadlineKnown ? (
-        <p className="text-sm">{`Deadline: ${scheme.deadline} (source: ${scheme.deadline_source})`}</p>
-      ) : (
-        <p className="text-sm">Check the official notice.</p>
-      )}
-
-      <h2 className="font-semibold mt-6 mb-2">Official source and helpdesk</h2>
-      {scheme.official_url ? (
-        <p className="text-sm">
-          <a href={scheme.official_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
-            Official source
-          </a>
-        </p>
-      ) : (
-        <p className="text-sm">Official source: {NOT_YET}</p>
-      )}
-      <p className="text-sm">
-        Helpdesk: {helpline ? `${helplineName}. Check the official source for contact details.` : 'Check the official source'}
-      </p>
-      <p className="text-sm">Last verified: {scheme.last_verified || NOT_YET}</p>
-
-      <p className="text-sm text-gray-600 mt-6">{APPROVAL_NOTE}</p>
-
-      <div className="flex flex-col sm:flex-row gap-3 pt-4">
-        <button type="button" onClick={onBack} className="px-4 py-2 rounded border">
+    <section className="sp-container max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 bg-[#faf7f2] text-[#18212b]">
+      <header className="mb-8">
+        <button
+          type="button"
+          onClick={onBack}
+          className="sp-btn-secondary inline-flex items-center min-h-11 px-4 py-2 rounded-xl border border-[#d5e9e2] bg-white text-[#18212b] mb-6"
+        >
           Back to results
         </button>
+        <h1 className="font-serif text-3xl sm:text-4xl font-semibold tracking-tight text-[#18212b]">{scheme.name}</h1>
+        <p className="text-base text-[#5a6573] mt-2 mb-4">{scheme.department || NOT_YET}</p>
+        <p className={`sp-chip inline-block text-xs font-medium px-2.5 py-1 rounded-full ${LABEL_CLASS[result.result]}`}>
+          {result.label}
+        </p>
+        <StatusLine title="Overview" text={sectionStatusText(overviewStatus)} />
+      </header>
+
+      <p role="note" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">This scholarship record is currently unverified. The rules, documents, steps and benefits shown here have not been confirmed against the official source, so this page does not confirm eligibility or official details. Check the official notice before acting.</p>
+
+      <section aria-labelledby="official-portal-heading" className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-8">
+        <h2 id="official-portal-heading" className="font-serif text-2xl text-[#18212b] mb-2">Official application portal</h2>
+        <p className="text-sm leading-relaxed text-[#5a6573] mb-4">
+          This is the Rajasthan SJMS scholarship portal, the department's application portal. It is not a verified page for this scheme. Confirm the current scheme, eligibility, application dates and instructions on the official portal before you apply.
+        </p>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+          <a
+            href="https://sjmsnew.rajasthan.gov.in/scholarship"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="sp-btn-primary inline-flex items-center justify-center min-h-11 px-5 py-2.5 rounded-xl bg-[#1f6353] text-white font-semibold hover:bg-[#184f43] transition-colors"
+          >
+            Visit Official Scholarship Portal
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+          <a
+            href="https://sje.rajasthan.gov.in/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="sp-btn-secondary inline-flex items-center justify-center min-h-11 px-5 py-2.5 rounded-xl border border-[#d9d2c3] bg-white text-[#18212b] font-medium hover:bg-[#f1ebdf] transition-colors"
+          >
+            Rajasthan Social Justice and Empowerment Department website
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        </div>
+      </section>
+
+
+      {scheme.description && (
+        <p className="text-base leading-relaxed text-[#5a6573] max-w-3xl mb-8">{scheme.description}</p>
+      )}
+
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6 lg:items-start">
+        <div>
+          <div className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-6">
+            <h2 className="font-serif text-2xl text-[#18212b] mb-4">Why this result</h2>
+            <StatusLine title="Eligibility" text={eligibilityStatusText(eligibilityStatus)} />
+            {result.caveat !== null && result.caveat !== undefined && (
+              <p className="text-sm mt-2">{result.caveat}</p>
+            )}
+            {result.rules.length > 0 ? (
+              <ul className="space-y-3 mt-4">
+                {result.rules.map((rule) => {
+                  const informational = rule.counted === false
+                  return (
+                    <li key={rule.rule_id} className={`text-sm border rounded-xl px-4 py-3.5 ${RULE_CLASS[rule.status]}`}>
+                      <span aria-hidden="true">{RULE_SYMBOL[rule.status]}</span> {rule.reason}
+                      {rule.note && <span className="block text-xs mt-1 opacity-80">{rule.note}</span>}
+                      {informational && (
+                        <>
+                          <span className="block text-xs mt-1 font-medium">Informational only</span>
+                          <span className="block text-xs">Not used in your eligibility result</span>
+                        </>
+                      )}
+                      {!informational && rule.current === false && (
+                        <>
+                          <span className="block text-xs mt-1 font-medium">Not currently verified</span>
+                          <span className="block text-xs">Unresolved; not used in a likely-eligible result</span>
+                        </>
+                      )}
+                      {!informational &&
+                        rule.current === true &&
+                        rule.status === 'fail' &&
+                        result.non_mandatory_failures.includes(rule.rule_id) && (
+                          <span className="block text-xs mt-1 font-medium">✗ Non-mandatory criterion not met</span>
+                        )}
+                      <RecordProvenance record={rule} />
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className="text-sm mt-2">{result.reasons.join(' ')}</p>
+            )}
+          </div>
+
+          <div className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-6">
+            <h2 className="font-serif text-2xl text-[#18212b] mb-4">Missing information</h2>
+            {result.missing_fields.length > 0 ? (
+              <p className="text-sm">{result.missing_fields.map(friendlyFieldName).join(', ')}</p>
+            ) : (
+              <p className="text-sm">No missing information.</p>
+            )}
+          </div>
+
+          <div className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-6">
+            <h2 className="font-serif text-2xl text-[#18212b] mb-4">Required Documents</h2>
+            <StatusLine title="Status" text={sectionStatusText(statusOf(documentItems))} />
+            {renderChecklist(
+              'documents',
+              documentItems,
+              'No source-backed documents have been published for this scheme yet.',
+            )}
+          </div>
+
+          <div className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-6">
+            <h2 className="font-serif text-2xl text-[#18212b] mb-4">Application Steps</h2>
+            <StatusLine title="Status" text={sectionStatusText(statusOf(stepItems))} />
+            {renderChecklist(
+              'steps',
+              stepItems,
+              'No source-backed application steps have been published for this scheme yet.',
+            )}
+          </div>
+
+          <div className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-6">
+            <h2 className="font-serif text-2xl text-[#18212b] mb-4">Benefits</h2>
+            <StatusLine title="Status" text={sectionStatusText(benefitsStatus)} />
+            {benefitItems.length > 0 && (
+              <ul className="space-y-3 mt-4">
+                {benefitItems.map((item) => (
+                  <li key={item.id} className="text-sm border border-[#d5e9e2] rounded-xl px-4 py-3.5">
+                    <span>{item.text}</span>
+                    <RecordProvenance record={item} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-6">
+            <h2 className="font-serif text-2xl text-[#18212b] mb-4">Deadline</h2>
+            {deadlineKnown ? (
+              <p className="text-sm">{`Deadline: ${scheme.deadline} (source: ${scheme.deadline_source})`}</p>
+            ) : (
+              <p className="text-sm text-[#4a2f00] bg-[#fdf6e3] border border-[#f0d78f] rounded-xl px-4 py-3">
+                Check the official notice.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <aside>
+          <div className="sp-card bg-white rounded-2xl border border-[#d5e9e2] shadow-sm p-5 sm:p-6 mb-6">
+            <h2 className="font-serif text-2xl text-[#18212b] mb-4">Official source and helpdesk</h2>
+            {scheme.official_url ? (
+              <p className="text-sm mb-4">
+                <a
+                  href={scheme.official_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="sp-btn-primary inline-flex items-center justify-center min-h-11 px-5 py-2.5 rounded-xl font-medium bg-[#1f6353] hover:bg-[#184f43] text-white"
+                >
+                  Official source
+                </a>
+              </p>
+            ) : (
+              <p className="text-sm text-[#4a2f00] bg-[#fdf6e3] border border-[#f0d78f] rounded-xl px-4 py-3 mb-4">
+                Official source: {NOT_YET}
+              </p>
+            )}
+            <p className="text-sm">
+              Helpdesk: {helpline ? `${helplineName}. Check the official source for contact details.` : 'Check the official source'}
+            </p>
+            <p className="text-sm text-[#5a6573] mt-3">Last verified: {scheme.last_verified || NOT_YET}</p>
+          </div>
+        </aside>
       </div>
+
+      <p className="text-sm text-[#5a6573] mt-2">{APPROVAL_NOTE}</p>
     </section>
   )
 }
+
+
