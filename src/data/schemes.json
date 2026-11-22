@@ -11,17 +11,22 @@
         "op": "eq",
         "value": "Rajasthan",
         "label": "Applicant state is Rajasthan (placeholder)",
-        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion."
+        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion.",
+        "source_url": null,
+        "source_page": null,
+        "source_date": null,
+        "academic_year": null,
+        "verification_status": "unverified"
       }
     ],
-    "required_documents": ["Placeholder document"],
-    "application_steps": ["Placeholder step"],
+    "required_documents": [],
+    "application_steps": [],
     "official_url": "https://example.com/sample-scheme",
     "helpline_id": null,
     "deadline": null,
     "deadline_source": null,
     "last_verified": null,
-    "verification_status": "unverified-sample"
+    "verification_status": "unverified"
   },
   {
     "id": "sample-scheme-2",
@@ -35,7 +40,12 @@
         "op": "eq",
         "value": "Rajasthan",
         "label": "Applicant state is Rajasthan (placeholder)",
-        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion."
+        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion.",
+        "source_url": null,
+        "source_page": null,
+        "source_date": null,
+        "academic_year": null,
+        "verification_status": "unverified"
       },
       {
         "id": "s2-category",
@@ -43,7 +53,12 @@
         "op": "in",
         "value": ["sc", "st", "obc", "ebc", "sbc", "dnt"],
         "label": "Category is in the placeholder list",
-        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion."
+        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion.",
+        "source_url": null,
+        "source_page": null,
+        "source_date": null,
+        "academic_year": null,
+        "verification_status": "unverified"
       },
       {
         "id": "s2-income",
@@ -51,17 +66,22 @@
         "op": "lte",
         "value": 250000,
         "label": "Family income is at or below the placeholder limit",
-        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion."
+        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion.",
+        "source_url": null,
+        "source_page": null,
+        "source_date": null,
+        "academic_year": null,
+        "verification_status": "unverified"
       }
     ],
-    "required_documents": ["Placeholder document"],
-    "application_steps": ["Placeholder step"],
+    "required_documents": [],
+    "application_steps": [],
     "official_url": "https://example.com/sample-scheme-2",
     "helpline_id": null,
     "deadline": null,
     "deadline_source": null,
     "last_verified": null,
-    "verification_status": "unverified-sample"
+    "verification_status": "unverified"
   },
   {
     "id": "sample-scheme-3",
@@ -75,7 +95,12 @@
         "op": "in",
         "value": ["ug", "pg"],
         "label": "Course is UG or PG (placeholder)",
-        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion."
+        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion.",
+        "source_url": null,
+        "source_page": null,
+        "source_date": null,
+        "academic_year": null,
+        "verification_status": "unverified"
       },
       {
         "id": "s3-pwd",
@@ -83,7 +108,12 @@
         "op": "eq",
         "value": true,
         "label": "Applicant has a disability (placeholder rule)",
-        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion."
+        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion.",
+        "source_url": null,
+        "source_page": null,
+        "source_date": null,
+        "academic_year": null,
+        "verification_status": "unverified"
       },
       {
         "id": "s3-income",
@@ -91,16 +121,21 @@
         "op": "lte",
         "value": 100000,
         "label": "Family income is at or below the placeholder limit (lower)",
-        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion."
+        "note": "Placeholder rule for testing the engine only. Not a real eligibility criterion.",
+        "source_url": null,
+        "source_page": null,
+        "source_date": null,
+        "academic_year": null,
+        "verification_status": "unverified"
       }
     ],
-    "required_documents": ["Placeholder document"],
-    "application_steps": ["Placeholder step"],
+    "required_documents": [],
+    "application_steps": [],
     "official_url": "https://example.com/sample-scheme-3",
     "helpline_id": null,
     "deadline": null,
     "deadline_source": null,
     "last_verified": null,
-    "verification_status": "unverified-sample"
+    "verification_status": "unverified"
   }
 ]

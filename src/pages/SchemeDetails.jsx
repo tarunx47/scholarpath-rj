@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { loadSchemes } from '../lib/dataLoader.js'
 import { evaluateScheme } from '../lib/eligibility.js'
+import { getVerificationInfo } from '../lib/verification.js'
+import { readChecklist, setChecklistItem, getChecklistItem } from '../lib/checklist.js'
 import helplines from '../data/helplines.json'
 
 const PROFILE_KEY = 'scholarpath.profile'
-const UNVERIFIED_STATUS = 'unverified-sample'
 
 export const APPROVAL_NOTE =
   'Likely eligible does not mean approved. Final decision rests with the concerned department.'
@@ -47,9 +49,87 @@ export function readStoredProfile() {
   }
 }
 
+// Normalise a document/step entry (string or object) into a record with a stable id.
+function normaliseItems(list, kind) {
+  if (!Array.isArray(list)) return []
+  const prefix = kind === 'documents' ? 'doc' : 'step'
+  return list.map((entry, index) => {
+    const fallbackId = `${prefix}-${index}`
+    if (typeof entry === 'string') {
+      return {
+        id: fallbackId,
+        text: entry,
+        verification_status: 'unverified',
+        source_url: null,
+        source_page: null,
+        source_date: null,
+        academic_year: null,
+      }
+    }
+    const obj = entry !== null && typeof entry === 'object' ? entry : {}
+    return {
+      id: obj.id !== undefined && obj.id !== null && obj.id !== '' ? String(obj.id) : fallbackId,
+      text: typeof obj.text === 'string' ? obj.text : '',
+      verification_status: obj.verification_status ?? 'unverified',
+      source_url: obj.source_url ?? null,
+      source_page: obj.source_page ?? null,
+      source_date: obj.source_date ?? null,
+      academic_year: obj.academic_year ?? null,
+    }
+  })
+}
+
+function SourceLine({ record }) {
+  const { source_url: url, source_page: page, source_date: date, academic_year: year } = record
+  const parts = []
+  if (!url && !page && !date) parts.push('Source not established')
+  if (page) parts.push(page)
+  if (url) {
+    parts.push(
+      <a key="url" href={url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">
+        Source link
+      </a>,
+    )
+  }
+  if (date) parts.push(`Source date: ${date}`)
+  if (year) parts.push(`Academic year: ${year}`)
+  return (
+    <span className="block text-xs mt-1 opacity-80">
+      {parts.map((part, i) => (
+        <span key={i}>
+          {i > 0 ? ' · ' : ''}
+          {part}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// Verification label, warning line and source provenance for one record.
+function RecordProvenance({ record }) {
+  const info = getVerificationInfo(record.verification_status, record.academic_year)
+  let label = info.label
+  if (info.isHistorical) {
+    label = record.academic_year ? `Historical – ${record.academic_year}` : 'Historical'
+  }
+  return (
+    <>
+      <span className={`block text-xs mt-1 ${info.isHistorical ? 'font-semibold' : 'opacity-80'}`}>{label}</span>
+      {info.isWarning && (
+        <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded mt-1 ${info.className}`}>
+          Not currently verified
+        </span>
+      )}
+      <SourceLine record={record} />
+    </>
+  )
+}
+
 export default function SchemeDetails({ schemeId, onBack }) {
   const profile = readStoredProfile()
   const scheme = loadSchemes().find((s) => s.id === schemeId)
+  // Snapshot is only used to force a re-render; checked state is read via getChecklistItem.
+  const [, setChecklist] = useState(readChecklist)
 
   if (!scheme) {
     return (
@@ -66,21 +146,50 @@ export default function SchemeDetails({ schemeId, onBack }) {
   const helpline = scheme.helpline_id
     ? helplines.find((h) => h.id === scheme.helpline_id)
     : undefined
-  const isUnverified = scheme.verification_status === UNVERIFIED_STATUS
-  const verificationText =
-    scheme.verification_status === 'verified'
-      ? 'Verified'
-      : isUnverified
-        ? 'Sample, unverified'
-        : 'Check the official source'
+  const schemeInfo = getVerificationInfo(scheme.verification_status, scheme.academic_year)
+
+  function toggleItem(kind, itemId, checked) {
+    setChecklistItem(scheme.id, kind, itemId, checked)
+    setChecklist(readChecklist())
+  }
+
+  function renderChecklist(kind, rawList, emptyText) {
+    const items = normaliseItems(rawList, kind)
+    if (items.length === 0) return <p className="text-sm">{emptyText}</p>
+    const current = items.filter((item) => item.verification_status !== 'historical')
+    const historical = items.filter((item) => item.verification_status === 'historical')
+    const renderItem = (item) => (
+      <li key={item.id} className="text-sm border rounded px-3 py-2">
+        <label className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={getChecklistItem(scheme.id, kind, item.id)}
+            onChange={(e) => toggleItem(kind, item.id, e.target.checked)}
+          />
+          <span>{item.text}</span>
+        </label>
+        <RecordProvenance record={item} />
+      </li>
+    )
+    return (
+      <>
+        {current.length > 0 && <ul className="space-y-2">{current.map(renderItem)}</ul>}
+        {historical.length > 0 && (
+          <>
+            <h3 className="text-sm font-medium mt-3 mb-1">Historical (not current)</h3>
+            <ul className="space-y-2">{historical.map(renderItem)}</ul>
+          </>
+        )}
+      </>
+    )
+  }
 
   return (
     <section className="p-4 sm:p-6 max-w-2xl mx-auto">
-      {isUnverified && (
-        <span className="inline-block mb-2 text-xs font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-900">
-          Sample, unverified
-        </span>
-      )}
+      <span className={`inline-block mb-2 text-xs font-medium px-2 py-0.5 rounded ${schemeInfo.className}`}>
+        {schemeInfo.label}
+      </span>
       <h1 className="text-2xl font-bold">{scheme.name}</h1>
       <p className="text-sm text-gray-600 mb-2">{scheme.department}</p>
       <p className={`inline-block text-xs font-medium px-2 py-1 rounded ${LABEL_CLASS[result.result]}`}>
@@ -96,6 +205,8 @@ export default function SchemeDetails({ schemeId, onBack }) {
             <li key={rule.rule_id} className={`text-sm border rounded px-3 py-2 ${RULE_CLASS[rule.status]}`}>
               <span aria-hidden="true">{RULE_SYMBOL[rule.status]}</span> {rule.reason}
               {rule.note && <span className="block text-xs mt-1 opacity-80">{rule.note}</span>}
+              <RecordProvenance record={rule} />
+
             </li>
           ))}
         </ul>
@@ -109,6 +220,21 @@ export default function SchemeDetails({ schemeId, onBack }) {
       ) : (
         <p className="text-sm">No missing information.</p>
       )}
+
+      <h2 className="font-semibold mt-6 mb-2">Required Documents</h2>
+      {renderChecklist(
+        'documents',
+        scheme.required_documents,
+        'No source-backed documents have been published for this scheme yet.',
+      )}
+
+      <h2 className="font-semibold mt-6 mb-2">Application Steps</h2>
+      {renderChecklist(
+        'steps',
+        scheme.application_steps,
+        'No source-backed application steps have been published for this scheme yet.',
+      )}
+
 
       <h2 className="font-semibold mt-6 mb-2">Deadline</h2>
       {scheme.deadline ? (
@@ -133,7 +259,12 @@ export default function SchemeDetails({ schemeId, onBack }) {
       </p>
 
       <h2 className="font-semibold mt-6 mb-2">Verification</h2>
-      <p className="text-sm">Status: {verificationText}</p>
+      <p className="text-sm">Status: {schemeInfo.label}</p>
+      {schemeInfo.isWarning && (
+        <p className={`inline-block text-xs font-medium px-2 py-0.5 rounded mt-1 ${schemeInfo.className}`}>
+          Not currently verified
+        </p>
+      )}
       {scheme.last_verified && <p className="text-sm">Last verified: {scheme.last_verified}</p>}
 
       <p className="text-sm text-gray-600 mt-6">{APPROVAL_NOTE}</p>

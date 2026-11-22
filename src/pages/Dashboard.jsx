@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { loadSchemes } from '../lib/dataLoader.js'
 import { evaluateScheme } from '../lib/eligibility.js'
+import { getVerificationInfo } from '../lib/verification.js'
 import {
   APPROVAL_NOTE,
   LABEL_CLASS,
@@ -12,7 +13,6 @@ import {
 
 const SAVED_KEY = 'scholarpath.saved'
 const APPLIED_KEY = 'scholarpath.applied'
-const UNVERIFIED_STATUS = 'unverified-sample'
 const RESULT_ORDER = ['likely_eligible', 'possibly_eligible', 'likely_not_eligible']
 
 const TABS = [
@@ -112,13 +112,12 @@ export default function Dashboard({ onOpenScheme, onEditProfile, onBack }) {
           {visible.map(({ scheme, result: r }) => {
             const isSaved = saved.includes(scheme.id)
             const isApplied = applied.includes(scheme.id)
+            const info = getVerificationInfo(scheme.verification_status, scheme.academic_year)
             return (
               <li key={scheme.id} className="border rounded p-4 bg-white">
-                {scheme.verification_status === UNVERIFIED_STATUS && (
-                  <span className="inline-block mb-2 text-xs font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-900">
-                    Sample, unverified
-                  </span>
-                )}
+                <span className={`inline-block mb-2 text-xs font-medium px-2 py-0.5 rounded ${info.className}`}>
+                  {info.label}
+                </span>
                 <h2 className="font-semibold">{scheme.name}</h2>
                 <p className="text-sm text-gray-600">{scheme.department}</p>
                 <p className={`inline-block mt-2 text-xs font-medium px-2 py-1 rounded ${LABEL_CLASS[r.result]}`}>
