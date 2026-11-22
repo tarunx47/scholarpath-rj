@@ -53,6 +53,33 @@ check(
   evaluateScheme(schemeNoRules, profile).result === "possibly_eligible"
 );
 
+// Unsupported operator: must not reject the applicant
+const unsupportedNeRule = { id: "t-ne", field: "state", op: "ne", value: "Rajasthan", label: "x", note: "test" };
+const unsupportedAnyRule = { id: "t-any", field: "category", op: "any", value: ["a"], label: "x", note: "test" };
+const unsupportedNeResult = evaluateRule(unsupportedNeRule, { state: "Rajasthan" });
+check("rule unsupported op is unknown", unsupportedNeResult.status === "unknown");
+check(
+  "unsupported op reason says cannot check automatically",
+  unsupportedNeResult.reason.includes("Cannot check automatically: x")
+);
+const unsupportedNeScheme = { id: "s-ne", name: "Unsupported ne Scheme", eligibility: [unsupportedNeRule] };
+const unsupportedNeSchemeResult = evaluateScheme(unsupportedNeScheme, { state: "Rajasthan" });
+check("scheme unsupported ne is possibly_eligible", unsupportedNeSchemeResult.result === "possibly_eligible");
+check(
+  "scheme unsupported ne reasons contain cannot check automatically",
+  unsupportedNeSchemeResult.reasons.includes("Cannot check automatically: x")
+);
+const unsupportedAnyScheme = { id: "s-any", name: "Unsupported any Scheme", eligibility: [unsupportedAnyRule] };
+check(
+  "scheme unsupported any is possibly_eligible",
+  evaluateScheme(unsupportedAnyScheme, { category: "sc" }).result === "possibly_eligible"
+);
+const unsupportedWithFailScheme = { id: "s-ne-fail", name: "Unsupported plus Fail Scheme", eligibility: [unsupportedNeRule, eqRule] };
+check(
+  "unsupported op plus real failure is likely_not_eligible",
+  evaluateScheme(unsupportedWithFailScheme, { state: "Goa" }).result === "likely_not_eligible"
+);
+
 if (failures > 0) {
   process.exitCode = 1;
 }
