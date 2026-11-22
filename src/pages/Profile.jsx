@@ -3,19 +3,32 @@ import { useState } from 'react'
 const CATEGORIES = ['general', 'obc', 'sc', 'st', 'ebc', 'sbc', 'dnt', 'ews']
 const COURSE_LEVELS = ['ug', 'pg', 'diploma']
 const GENDERS = ['female', 'male', 'other', 'prefer-not-to-say']
-const INSTITUTION_TYPES = ['govt', 'private']
+const INSTITUTION_TYPES = ['govt', 'private', 'national_level']
 
 const labelClass = 'block text-sm font-medium mb-1'
 const inputClass = 'w-full border rounded px-3 py-2 text-base'
 
+function readStoredProfile() {
+  try {
+    const raw = sessionStorage.getItem('scholarpath.profile')
+    const parsed = raw ? JSON.parse(raw) : null
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
 export default function Profile({ onSubmit, onBack }) {
-  const [state, setState] = useState('')
-  const [category, setCategory] = useState('general')
-  const [income, setIncome] = useState('')
-  const [courseLevel, setCourseLevel] = useState('ug')
-  const [gender, setGender] = useState('female')
-  const [isPwd, setIsPwd] = useState(false)
-  const [institutionType, setInstitutionType] = useState('')
+  const [stored] = useState(readStoredProfile)
+  const [state, setState] = useState(typeof stored.state === 'string' ? stored.state : 'Rajasthan')
+  const [category, setCategory] = useState(stored.category ?? 'general')
+  const [income, setIncome] = useState(
+    typeof stored.annual_family_income === 'number' ? String(stored.annual_family_income) : ''
+  )
+  const [courseLevel, setCourseLevel] = useState(stored.course_level ?? 'ug')
+  const [gender, setGender] = useState(stored.gender ?? 'female')
+  const [isPwd, setIsPwd] = useState(stored.is_pwd === true)
+  const [institutionType, setInstitutionType] = useState(stored.institution_type ?? '')
 
   function handleSubmit(e) {
     e.preventDefault()
